@@ -75,15 +75,28 @@ static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     irq_count++;
     spin_lock(&p->spinlock);
 
-    /*if (irq == p->clock_irq) {
+   /* if (irq == p->data_irq) {
         if (p->sysfs.status == _E_ES_NONE) {
             em125_save_data(p);
             systime_start(p->info.stamp);
         }
     }*/
 
-    pr_info(" Interrupt count: %d\n", irq_count);
+    if (irq_count <= 9){
+        //systime_start(p->info.stamp);
+        //pr_info(" Stamp time: %lu\n", p->info.stamp);
 
+        systime_start(p->info.period[irq_count]);
+        pr_info(" Stamp time: %lu\n", p->info.period[irq_count]);
+
+        if (irq_count == 9){
+            p->info.cycle = (p->info.period[9] - p->info.period[1]) / 9;
+            pr_info(" Cycle : %ld\n", p->info.cycle);
+        }
+    }
+
+    pr_info(" Interrupt count: %d\n", irq_count);
+    
     spin_unlock(&p->spinlock);
 
     if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100)

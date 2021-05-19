@@ -73,6 +73,8 @@ typedef struct s_em125_info {
     bool in_progress;
     unsigned int pulses;
     unsigned long stamp;
+    unsigned long period[9];
+    unsigned long cycle;
     char buffer[EM125READER_BUF_SIZE];
 } s_em125_info_t;
 
