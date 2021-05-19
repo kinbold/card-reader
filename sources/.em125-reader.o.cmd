@@ -791,6 +791,49 @@ deps_/home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader
   include/linux/pinctrl/machine.h \
   include/linux/gpio/consumer.h \
     $(wildcard include/config/gpio/sysfs.h) \
+  include/linux/pwm.h \
+    $(wildcard include/config/pwm.h) \
+    $(wildcard include/config/pwm/sysfs.h) \
+  include/linux/module.h \
+    $(wildcard include/config/modules/tree/lookup.h) \
+    $(wildcard include/config/module/sig.h) \
+    $(wildcard include/config/kallsyms.h) \
+    $(wildcard include/config/tracepoints.h) \
+    $(wildcard include/config/bpf/events.h) \
+    $(wildcard include/config/event/tracing.h) \
+    $(wildcard include/config/module/unload.h) \
+    $(wildcard include/config/constructors.h) \
+    $(wildcard include/config/function/error/injection.h) \
+  include/linux/kmod.h \
+  include/linux/umh.h \
+  include/linux/elf.h \
+  arch/arm/include/asm/elf.h \
+  arch/arm/include/asm/vdso_datapage.h \
+  arch/arm/include/asm/user.h \
+  include/uapi/linux/elf.h \
+  include/uapi/linux/elf-em.h \
+  include/linux/moduleparam.h \
+    $(wildcard include/config/alpha.h) \
+    $(wildcard include/config/ia64.h) \
+    $(wildcard include/config/ppc64.h) \
+  include/linux/rbtree_latch.h \
+  include/linux/error-injection.h \
+  include/asm-generic/error-injection.h \
+  include/linux/tracepoint-defs.h \
+  arch/arm/include/asm/module.h \
+    $(wildcard include/config/arm/unwind.h) \
+    $(wildcard include/config/arm/module/plts.h) \
+  include/asm-generic/module.h \
+    $(wildcard include/config/have/mod/arch/specific.h) \
+    $(wildcard include/config/modules/use/elf/rel.h) \
+    $(wildcard include/config/modules/use/elf/rela.h) \
+  include/uapi/linux/unistd.h \
+  arch/arm/include/asm/unistd.h \
+    $(wildcard include/config/oabi/compat.h) \
+  arch/arm/include/uapi/asm/unistd.h \
+  arch/arm/include/generated/uapi/asm/unistd-eabi.h \
+  arch/arm/include/generated/uapi/asm/unistd-common.h \
+  arch/arm/include/generated/asm/unistd-nr.h \
   /home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader.h \
   /home/vitor/dimep_workspace/device-drivers/card-reader/sources/systime.h \
 

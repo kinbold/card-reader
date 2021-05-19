@@ -28,10 +28,14 @@
 #include <linux/kdev_t.h>
 #include <linux/spinlock.h>
 #include <linux/gpio/consumer.h>
+#include <linux/pwm.h>
+#include <linux/module.h>
+#include <linux/unistd.h>
 #include "em125-reader.h"
 #include "systime.h"
 
 static int em125_minor = 0;
+static int irq_count = 0;
 
 /**
  * @brief Routine to save data from data interrupt
@@ -60,7 +64,7 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
 }
 
 /**
- * @brief The interrupt service routine called on clock falling
+ * @brief The interrupt service routine called on data
  * @param irq   : Interrupt value that was fired
  * @param data  : Data pointer to this driver interrupt
  * @return \ref irqreturn_t
@@ -68,16 +72,25 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
 static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     struct s_em125_driver * p = (struct s_em125_driver *) data;
 
+    irq_count++;
     spin_lock(&p->spinlock);
 
-    if (irq == p->data_irq) {
+    /*if (irq == p->clock_irq) {
         if (p->sysfs.status == _E_ES_NONE) {
             em125_save_data(p);
             systime_start(p->info.stamp);
         }
-    }
+    }*/
+
+    pr_info(" Interrupt count: %d\n", irq_count);
 
     spin_unlock(&p->spinlock);
+
+    if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100)
+    {
+        irq_count = 0;
+        //disable_irq(irq);
+    }
 
     return IRQ_HANDLED;
 }
@@ -95,6 +108,10 @@ void em125_reader_destroy(struct platform_device *pdev) {
             free_irq(em125->data_irq, em125);
         if (em125->dev)
             device_unregister(em125->dev);
+
+        gpio_free(em125->data_gpiod);
+        pwm_free(em125->antena);
+
         devm_kfree(&pdev->dev, em125);
     }
 }
@@ -107,6 +124,8 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     int err;
     s_em125_driver_t * em125 = NULL;
     struct device_node *np = NULL;
+    struct pwm_state state;
+    struct device *dev = &pdev->dev;
 
     //*****************************************************************************************************************
     em125 = devm_kzalloc(&pdev->dev, sizeof(*em125), GFP_KERNEL);
@@ -136,6 +155,13 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
 
     pr_info(" node: %s\n", em125->name);
 
+    // Settings data pin first
+    em125->data_gpiod = devm_gpiod_get(&pdev->dev, "data", GPIOD_IN);
+    if (IS_ERR(em125->data_gpiod)) {
+        dev_err(&pdev->dev, " unable to get data gpiod\n");
+        return PTR_ERR(em125->data_gpiod);
+    }
+
     // create device driver to system class
     em125->dev = device_create(drv_class,
                              NULL,
@@ -161,13 +187,13 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
 
     err = request_irq(em125->data_irq,
                       em125_reader_data_irq,
-                      IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+                      IRQF_TRIGGER_RISING,
                       "em125_data",
                       em125);
 
     if (err < 0) {
         em125->data_irq = -1;
-        pr_err(" data: cannot register IRQ %d\n", em125->data_irq);
+        pr_err(" clock: cannot register IRQ %d\n", em125->data_irq);
         return -EIO;
     }
 
@@ -178,6 +204,30 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
         return -EIO;
 
     em125_minor++;
+
+    /* Inicializar oscilação de antena 125KHz*/
+
+    em125->antena = devm_pwm_get(dev, NULL);
+	if (IS_ERR(em125->antena)) {
+		err = PTR_ERR(em125->antena);
+		if (err != -EPROBE_DEFER)
+			dev_err(dev, "Failed to request PWM device: %d\n",
+				err);
+		return err;
+	}
+
+	pwm_get_state(em125->antena, &state);
+
+	state.enabled = true;
+	state.period = 8000;
+    state.duty_cycle= 4000;
+
+    err = pwm_apply_state(em125->antena, &state);
+    if (err) {
+		dev_err(dev, "failed to apply initial PWM state: %d\n",
+			err);
+		return err;
+	}
 
     return 0;
 }

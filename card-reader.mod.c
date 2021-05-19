@@ -34,4 +34,4 @@ MODULE_ALIAS("of:N*T*Caba-reader,inputC*");
 MODULE_ALIAS("of:N*T*Cem125,input");
 MODULE_ALIAS("of:N*T*Cem125,inputC*");
 
-MODULE_INFO(srcversion, "E19ED2444CCF5E8FD950863");
+MODULE_INFO(srcversion, "F231DD64BFB28045562F354");

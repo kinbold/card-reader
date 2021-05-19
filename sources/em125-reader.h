@@ -59,6 +59,9 @@
 //! Timeout to detect a card number
 #define EM125_TIMEOUT                                100 // 100 milliseconds
 
+
+#define DATA_ACQUIS_MIN_SAMPLES_EM4100              245
+
 /**
  * @}
  */
@@ -94,6 +97,7 @@ typedef struct s_em125_driver {
     struct s_em125_info info;
     struct s_em125_sysfs sysfs;
     struct gpio_desc *data_gpiod;
+    struct pwm_device *antena;
 } s_em125_driver_t;
 
 enum _e_em125_status {

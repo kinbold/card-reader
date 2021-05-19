@@ -1,23 +1,22 @@
-	
-/*	wiegand {*/
-/*		compatible = "wiegand-reader,input";*/
-/*		*/
-/*		data0 = <&pio 1 4 GPIO_ACTIVE_HIGH>;*/
-/*		data1 = <&pio 1 5 GPIO_ACTIVE_HIGH>;*/
-/*		*/
-/*		interrupt-parent = <&pio>;*/
-/*		interrupts = <1 4 IRQ_TYPE_LEVEL_LOW>, <1 5 IRQ_TYPE_LEVEL_LOW>;*/
-/*		interrupt-names = "data0", "data1";*/
-/*	};*/
+	/*wiegand {*/
+		/*compatible = "wiegand-reader,input";*/
+		
+		/*data0 = <&pio 1 4 GPIO_ACTIVE_HIGH>; *//* PB4 */
+		/*data1 = <&pio 1 5 GPIO_ACTIVE_HIGH>;*/ /* PB5 */
+		
+		/*interrupt-parent = <&pio>;*/
+		/*interrupts = <1 4 IRQ_TYPE_LEVEL_LOW>, <1 5 IRQ_TYPE_LEVEL_LOW>;    */
+		/*interrupt-names = "data0", "data1";*/
+	/*};*/
 	
 	em125 {
 		compatible = "em125,input";
 		
-		/*antena = <&pio 7 1 GPIO_ACTIVE_HIGH>;*/
-		antena = <&pio 7 0 GPIO_ACTIVE_HIGH>; /* Usando o buzzer temporariamente pra testar */
-		data = <&r_pio 0 4 GPIO_ACTIVE_HIGH>;
-		
+		pwms = <&pwm 1 8000 1>;
+		data-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>;
+
 		interrupt-parent = <&r_pio>;
 		interrupts = <0 4 IRQ_TYPE_EDGE_BOTH>;
 		interrupt-names = "data";
-	};
+	};	
+	

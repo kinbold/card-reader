@@ -1,5 +1,6 @@
 MODULE_NAME := card-reader
-KDIR := /home/vitor/Embedded/buildroot-2020.02.8/output/build/linux-stable/
+#KDIR := /home/vitor/Embedded/buildroot-2020.02.8/output/build/linux-stable/
+KDIR := /home/vitor/Embedded/buildroot-2020.02.8/output/build/linux-v5.0.2/
 ARCH := arm
 CROSS_COMPILE := arm-buildroot-linux-gnueabihf-
 PWD := $(shell pwd)
