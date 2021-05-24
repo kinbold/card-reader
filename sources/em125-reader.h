@@ -43,7 +43,7 @@
 #define EM125READER_MAX_BITS                         600u
 
 //! Configurar o tamanho máximo do buffer
-#define EM125READER_BUF_SIZE                         ((EM125READER_MAX_BITS + 7) / 8)
+#define EM125READER_BUF_SIZE                         128u
 
 //! Get a bit from buffer read
 #define INTERPRET_GET_BITS_BUFF_DATA(buff, pos)     ((buff[(pos) / 8] & (1 << (7 - ((pos) % 8)))) != 0)
@@ -60,7 +60,7 @@
 #define EM125_TIMEOUT                                100 // 100 milliseconds
 
 
-#define DATA_ACQUIS_MIN_SAMPLES_EM4100              245
+#define DATA_ACQUIS_MIN_SAMPLES_EM4100              100
 
 /**
  * @}
@@ -73,9 +73,10 @@ typedef struct s_em125_info {
     bool in_progress;
     unsigned int pulses;
     unsigned long stamp;
+    unsigned long stamp_old;
     unsigned long period[9];
     unsigned long cycle;
-    char buffer[EM125READER_BUF_SIZE];
+    unsigned int buffer[EM125READER_BUF_SIZE];
 } s_em125_info_t;
 
 

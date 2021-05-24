@@ -1,9 +1,9 @@
 /**
  ******************************************************************************
- * @file    aba-reader.c
- * @author  Dimitri Marques - dimitri@ddembedded.com.br
+ * @file    em125-reader.c
+ * @author  Vitor Gomes <vitor.gomes@csgd.com.br>
  * @version V0.0.0
- * @date    2016-05-11
+ * @date    2021-05-20
  * @brief   Magnetic Reader Linux Kernel module using GPIO interrupts.
  ******************************************************************************
  * @attention
@@ -44,7 +44,11 @@ static int irq_count = 0;
  *        @arg 1 : From data 1 interrupt
  */
 static void em125_save_data(struct s_em125_driver * dev_data) {
-    int value = !gpiod_get_value(dev_data->data_gpiod);
+
+    int i;
+    unsigned long temp;
+   /* int value = !gpiod_get_value(dev_data->data_gpiod);
+
 
     if (dev_data->info.pulses == 0) {
         if (value) {
@@ -60,7 +64,72 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
                                 dev_data->info.pulses,
                                 value);
         dev_data->info.pulses++;
+    }*/
+
+    // Wait for preamble
+
+    if (irq_count < 9){
+        systime_start_us(dev_data->info.period[irq_count]);
+        //pr_info(" Period time: %lu\n", dev_data->info.period[irq_count]);
+
+
+       /*if (irq_count == 0){
+            dev_data->info.cycle = dev_data->info.period[0];
+        } 
+        else{
+            dev_data->info.cycle += dev_data->info.period[irq_count];
+            dev_data->info.cycle /= 2;
+        }*/
+
+        if (irq_count > 0){
+            temp = dev_data->info.period[irq_count] - dev_data->info.period[irq_count - 1];
+        } 
+
+        if (temp > dev_data->info.cycle)
+            dev_data->info.cycle = temp;
+
+
+        if (irq_count == 8){
+
+          /*  dev_data->info.cycle = dev_data->info.period[0];
+
+            for (i = 1; i < 9 ; i++){
+                dev_data->info.cycle += dev_data->info.period[i];
+            }
+            dev_data->info.cycle /= 9;*/
+
+            pr_info(" Cycle : %ld\n", dev_data->info.cycle);
+        }
+        dev_data->info.buffer[irq_count] = 1;
     }
+    // Manufacturer Version Number
+    else /*if (irq_count <= 63)*/{
+        if ( dev_data->info.stamp >= (dev_data->info.stamp_old + (dev_data->info.cycle + ( dev_data->info.cycle / 3 ) ) ) ){
+            dev_data->info.buffer[irq_count] = !dev_data->info.buffer[irq_count - 1]; 
+        }
+        else
+            dev_data->info.buffer[irq_count] = dev_data->info.buffer[irq_count - 1]; 
+
+        pr_info(" Stamp time    : %lu\n", dev_data->info.stamp);
+        //pr_info(" Stamp time old: %lu\n", dev_data->info.stamp_old);
+        //pr_info(" Time calc :%lu\n", (dev_data->info.stamp_old + (dev_data->info.cycle + ( dev_data->info.cycle / 3 ) ) ) );
+    }
+    // Unique ID
+  /*      else if (irq_count <= 58){
+
+
+    }
+    // Column parity
+    else if (irq_count <= 63){
+
+
+        // Disable interrupt
+
+    }*/
+
+    pr_info(" Buffer [%d] : %d\n", irq_count, dev_data->info.buffer[irq_count]);
+    dev_data->info.stamp_old = dev_data->info.stamp;
+    irq_count++;
 }
 
 /**
@@ -72,21 +141,25 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
 static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     struct s_em125_driver * p = (struct s_em125_driver *) data;
 
-    irq_count++;
+    
     spin_lock(&p->spinlock);
 
-   /* if (irq == p->data_irq) {
+    if (irq == p->data_irq) {
         if (p->sysfs.status == _E_ES_NONE) {
             em125_save_data(p);
-            systime_start(p->info.stamp);
+            systime_start_us(p->info.stamp);
         }
-    }*/
+    }
+
+  /*  irq_count++;
+
+
 
     if (irq_count <= 9){
         //systime_start(p->info.stamp);
         //pr_info(" Stamp time: %lu\n", p->info.stamp);
 
-        systime_start(p->info.period[irq_count]);
+        systime_start_us(p->info.period[irq_count]);
         pr_info(" Stamp time: %lu\n", p->info.period[irq_count]);
 
         if (irq_count == 9){
@@ -95,15 +168,15 @@ static irqreturn_t em125_reader_data_irq(int irq, void *data) {
         }
     }
 
-    pr_info(" Interrupt count: %d\n", irq_count);
+    pr_info(" Interrupt count: %d\n", irq_count);*/
     
     spin_unlock(&p->spinlock);
 
-    if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100)
+  /*  if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100)
     {
         irq_count = 0;
         //disable_irq(irq);
-    }
+    }*/
 
     return IRQ_HANDLED;
 }
@@ -151,6 +224,7 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     em125->data_irq = -1;
     em125->info.pulses = 0;
     em125->info.in_progress = 0;
+    em125->info.cycle = 0;
     memset(em125->info.buffer, 0, EM125READER_BUF_SIZE);
     spin_lock_init(&em125->spinlock);
 

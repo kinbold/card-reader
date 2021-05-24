@@ -31,10 +31,13 @@
  */
 
 //! Start timer routine
-#define systime_start(timer)              (timer=jiffies_to_msecs(jiffies))
+#define systime_start(timer)                (timer=jiffies_to_msecs(jiffies))
+#define systime_start_us(timer)              (timer=jiffies_to_usecs(jiffies))
+#define systime_start_ns(timer)              (timer=jiffies_to_nsecs(jiffies))
 
 //! Timeout timer routine
 #define systime_timeout(timer, timeout)   ((jiffies_to_msecs(jiffies)-timer) >= timeout)
+
 
 /**
  * @}
