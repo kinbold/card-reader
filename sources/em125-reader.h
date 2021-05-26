@@ -43,7 +43,7 @@
 #define EM125READER_MAX_BITS                         600u
 
 //! Configurar o tamanho máximo do buffer
-#define EM125READER_BUF_SIZE                         128u
+#define EM125READER_BUF_SIZE                         256u
 
 //! Get a bit from buffer read
 #define INTERPRET_GET_BITS_BUFF_DATA(buff, pos)     ((buff[(pos) / 8] & (1 << (7 - ((pos) % 8)))) != 0)
@@ -60,7 +60,7 @@
 #define EM125_TIMEOUT                                100 // 100 milliseconds
 
 
-#define DATA_ACQUIS_MIN_SAMPLES_EM4100              100
+#define DATA_ACQUIS_MIN_SAMPLES_EM4100              200
 
 /**
  * @}

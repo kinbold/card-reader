@@ -31,6 +31,7 @@
 #include <linux/pwm.h>
 #include <linux/module.h>
 #include <linux/unistd.h>
+
 #include "em125-reader.h"
 #include "systime.h"
 
@@ -66,70 +67,64 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
         dev_data->info.pulses++;
     }*/
 
+    // Acquire timestamp
+    //systime_start_us(dev_data->info.stamp);
+#if 0
     // Wait for preamble
-
     if (irq_count < 9){
-        systime_start_us(dev_data->info.period[irq_count]);
-        //pr_info(" Period time: %lu\n", dev_data->info.period[irq_count]);
-
-
-       /*if (irq_count == 0){
-            dev_data->info.cycle = dev_data->info.period[0];
-        } 
-        else{
-            dev_data->info.cycle += dev_data->info.period[irq_count];
-            dev_data->info.cycle /= 2;
-        }*/
-
-        if (irq_count > 0){
-            temp = dev_data->info.period[irq_count] - dev_data->info.period[irq_count - 1];
-        } 
-
-        if (temp > dev_data->info.cycle)
-            dev_data->info.cycle = temp;
-
-
-        if (irq_count == 8){
-
-          /*  dev_data->info.cycle = dev_data->info.period[0];
-
-            for (i = 1; i < 9 ; i++){
-                dev_data->info.cycle += dev_data->info.period[i];
-            }
-            dev_data->info.cycle /= 9;*/
-
-            pr_info(" Cycle : %ld\n", dev_data->info.cycle);
-        }
+        dev_data->info.period[irq_count] = dev_data->info.stamp;
         dev_data->info.buffer[irq_count] = 1;
+
+        pr_info(" Preamble time: %lu\n", dev_data->info.stamp);
+
+        // Calculate cycle duty from preamble
+        if (irq_count == 8){
+            dev_data->info.cycle = (dev_data->info.period[irq_count] - dev_data->info.period[irq_count-1]);
+            //dev_data->info.cycle = dev_data->info.period[8];
+            //dev_data->info.cycle
+
+            /*for (i = 7; i > 0; i--){
+                pr_info(" Cycle calc: %lu\n", dev_data->info.cycle);
+                dev_data->info.cycle += (dev_data->info.period[i] - dev_data->info.period[i-1]);
+                dev_data->info.cycle /= 2;
+            }*/
+
+            pr_info(" Period time: %lu\n", dev_data->info.cycle);
+        }
     }
     // Manufacturer Version Number
     else /*if (irq_count <= 63)*/{
-        if ( dev_data->info.stamp >= (dev_data->info.stamp_old + (dev_data->info.cycle + ( dev_data->info.cycle / 3 ) ) ) ){
+        if ( (dev_data->info.stamp - dev_data->info.stamp_old) > (dev_data->info.cycle * 1,3 )){
             dev_data->info.buffer[irq_count] = !dev_data->info.buffer[irq_count - 1]; 
         }
         else
             dev_data->info.buffer[irq_count] = dev_data->info.buffer[irq_count - 1]; 
 
-        pr_info(" Stamp time    : %lu\n", dev_data->info.stamp);
+        /* 
+        No fim, deve checar a paridade da linha e coluna, se estiver ok
+        deve enviar o numero para o buffer dev_data->info.buffer,
+
+        EM125READER_INSERTBIT2BUF(dev_data->info.buffer,
+                                dev_data->info.pulses,
+                                value);
+        dev_data->info.pulses++;*/
+
+        pr_info(" Stamp time diff : %lu\n", (dev_data->info.stamp - dev_data->info.stamp_old));
         //pr_info(" Stamp time old: %lu\n", dev_data->info.stamp_old);
         //pr_info(" Time calc :%lu\n", (dev_data->info.stamp_old + (dev_data->info.cycle + ( dev_data->info.cycle / 3 ) ) ) );
     }
     // Unique ID
   /*      else if (irq_count <= 58){
-
-
     }
     // Column parity
     else if (irq_count <= 63){
-
-
         // Disable interrupt
 
     }*/
-
-    pr_info(" Buffer [%d] : %d\n", irq_count, dev_data->info.buffer[irq_count]);
+#endif
+    pr_info(" Stamp time diff : %lu\n", (dev_data->info.stamp - dev_data->info.stamp_old));
+    //pr_info(" Buffer [%d] : %d\n", irq_count, dev_data->info.buffer[irq_count]);
     dev_data->info.stamp_old = dev_data->info.stamp;
-    irq_count++;
 }
 
 /**
@@ -140,43 +135,29 @@ static void em125_save_data(struct s_em125_driver * dev_data) {
  */
 static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     struct s_em125_driver * p = (struct s_em125_driver *) data;
-
     
-    spin_lock(&p->spinlock);
+    //systime_start_ns(p->info.stamp);
+    //p->info.stamp = get_cycles();
+    //rtdscl(p->info.stamp);
+    clock_gettime(CLOCK_MONOTONIC_RAW);
+
+    spin_lock(&p->spinlock);  
 
     if (irq == p->data_irq) {
         if (p->sysfs.status == _E_ES_NONE) {
+            //p->info.stamp = get_cycles();
             em125_save_data(p);
-            systime_start_us(p->info.stamp);
         }
     }
-
-  /*  irq_count++;
-
-
-
-    if (irq_count <= 9){
-        //systime_start(p->info.stamp);
-        //pr_info(" Stamp time: %lu\n", p->info.stamp);
-
-        systime_start_us(p->info.period[irq_count]);
-        pr_info(" Stamp time: %lu\n", p->info.period[irq_count]);
-
-        if (irq_count == 9){
-            p->info.cycle = (p->info.period[9] - p->info.period[1]) / 9;
-            pr_info(" Cycle : %ld\n", p->info.cycle);
-        }
-    }
-
-    pr_info(" Interrupt count: %d\n", irq_count);*/
     
     spin_unlock(&p->spinlock);
 
-  /*  if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100)
-    {
+    irq_count++;
+
+    if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100){
         irq_count = 0;
-        //disable_irq(irq);
-    }*/
+        //disable_irq(p->data_irq);
+    }
 
     return IRQ_HANDLED;
 }
@@ -194,9 +175,6 @@ void em125_reader_destroy(struct platform_device *pdev) {
             free_irq(em125->data_irq, em125);
         if (em125->dev)
             device_unregister(em125->dev);
-
-        gpio_free(em125->data_gpiod);
-        pwm_free(em125->antena);
 
         devm_kfree(&pdev->dev, em125);
     }
@@ -225,6 +203,7 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     em125->info.pulses = 0;
     em125->info.in_progress = 0;
     em125->info.cycle = 0;
+    em125->info.stamp_old = 0;
     memset(em125->info.buffer, 0, EM125READER_BUF_SIZE);
     spin_lock_init(&em125->spinlock);
 
@@ -243,26 +222,11 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     pr_info(" node: %s\n", em125->name);
 
     // Settings data pin first
-    em125->data_gpiod = devm_gpiod_get(&pdev->dev, "data", GPIOD_IN);
+    /*em125->data_gpiod = devm_gpiod_get(&pdev->dev, "data", GPIOD_IN);
     if (IS_ERR(em125->data_gpiod)) {
         dev_err(&pdev->dev, " unable to get data gpiod\n");
         return PTR_ERR(em125->data_gpiod);
-    }
-
-    // create device driver to system class
-    em125->dev = device_create(drv_class,
-                             NULL,
-                             MKDEV(0, 0),
-                             em125,
-                             "%s%d",
-                             "em125-in",
-                             em125->minor);
-
-    if (IS_ERR(em125->dev)) {
-        dev_warn(&pdev->dev,
-             "device_create failed for em125 sysfs\n");
-        return -EIO;
-    }
+    }*/
 
     // Set data interrupt
     em125->data_irq = platform_get_irq_byname(pdev, "data");
@@ -280,7 +244,22 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
 
     if (err < 0) {
         em125->data_irq = -1;
-        pr_err(" clock: cannot register IRQ %d\n", em125->data_irq);
+        pr_err(" data: cannot register IRQ %d\n", em125->data_irq);
+        return -EIO;
+    }
+
+    // create device driver to system class
+    em125->dev = device_create(drv_class,
+                             NULL,
+                             MKDEV(0, 0),
+                             em125,
+                             "%s%d",
+                             "em125-in",
+                             em125->minor);
+
+    if (IS_ERR(em125->dev)) {
+        dev_warn(&pdev->dev,
+             "device_create failed for em125 sysfs\n");
         return -EIO;
     }
 
