@@ -834,8 +834,61 @@ deps_/home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader
   arch/arm/include/generated/uapi/asm/unistd-eabi.h \
   arch/arm/include/generated/uapi/asm/unistd-common.h \
   arch/arm/include/generated/asm/unistd-nr.h \
+  arch/arm/include/asm/dma.h \
+    $(wildcard include/config/isa/dma/api.h) \
   /home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader.h \
   /home/vitor/dimep_workspace/device-drivers/card-reader/sources/systime.h \
+  include/linux/cdev.h \
+  include/linux/uaccess.h \
+  arch/arm/include/asm/uaccess.h \
+    $(wildcard include/config/cpu/sw/domain/pan.h) \
+    $(wildcard include/config/cpu/use/domains.h) \
+    $(wildcard include/config/uaccess/with/memcpy.h) \
+  arch/arm/include/asm/domain.h \
+    $(wildcard include/config/io/36.h) \
+    $(wildcard include/config/cpu/cp15/mmu.h) \
+  arch/arm/include/generated/asm/extable.h \
+  include/asm-generic/extable.h \
+  include/linux/kthread.h \
+  include/linux/cgroup.h \
+    $(wildcard include/config/cgroup/cpuacct.h) \
+    $(wildcard include/config/sock/cgroup/data.h) \
+    $(wildcard include/config/cgroup/net/prio.h) \
+    $(wildcard include/config/cgroup/net/classid.h) \
+    $(wildcard include/config/cgroup/data.h) \
+  include/uapi/linux/cgroupstats.h \
+  include/uapi/linux/taskstats.h \
+  include/linux/ns_common.h \
+  include/linux/nsproxy.h \
+  include/linux/user_namespace.h \
+    $(wildcard include/config/inotify/user.h) \
+    $(wildcard include/config/persistent/keyrings.h) \
+  include/linux/kernel_stat.h \
+  include/linux/cgroup-defs.h \
+  include/linux/percpu-refcount.h \
+  include/linux/u64_stats_sync.h \
+  include/linux/bpf-cgroup.h \
+    $(wildcard include/config/cgroup/bpf.h) \
+  include/linux/bpf.h \
+    $(wildcard include/config/bpf/stream/parser.h) \
+    $(wildcard include/config/xdp/sockets.h) \
+    $(wildcard include/config/inet.h) \
+  include/uapi/linux/bpf.h \
+    $(wildcard include/config/efficient/unaligned/access.h) \
+    $(wildcard include/config/ip/route/classid.h) \
+    $(wildcard include/config/bpf/kprobe/override.h) \
+    $(wildcard include/config/xfrm.h) \
+    $(wildcard include/config/bpf/lirc/mode2.h) \
+  include/uapi/linux/bpf_common.h \
+  include/linux/file.h \
+  include/linux/cgroup_subsys.h \
+    $(wildcard include/config/cgroup/device.h) \
+    $(wildcard include/config/cgroup/freezer.h) \
+    $(wildcard include/config/cgroup/perf.h) \
+    $(wildcard include/config/cgroup/hugetlb.h) \
+    $(wildcard include/config/cgroup/pids.h) \
+    $(wildcard include/config/cgroup/rdma.h) \
+    $(wildcard include/config/cgroup/debug.h) \
 
 /home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader.o: $(deps_/home/vitor/dimep_workspace/device-drivers/card-reader/sources/em125-reader.o)
 

@@ -31,6 +31,7 @@
 #include <linux/gpio.h>
 #include <linux/platform_device.h>
 
+
 /**
  * @addtogroup MagReader_Export_Defines Definições
  * @{
@@ -74,6 +75,8 @@ typedef struct s_em125_info {
     unsigned int pulses;
     unsigned long stamp;
     unsigned long stamp_old;
+    struct timespec start_uptime; 
+    struct timespec start_uptime_old; 
     unsigned long period[9];
     unsigned long cycle;
     unsigned int buffer[EM125READER_BUF_SIZE];
@@ -96,6 +99,7 @@ typedef struct s_em125_driver {
     struct device * dev;
     int minor;
     int data_irq;
+    int data_irq_dma;
     spinlock_t spinlock;
     struct s_em125_info info;
     struct s_em125_sysfs sysfs;
