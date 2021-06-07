@@ -1,27 +1,32 @@
-	/*wiegand {*/
-		/*compatible = "wiegand-reader,input";*/
+	
+	
+	wiegand {
+		compatible = "wiegand-reader,input";
 		
-		/*data0 = <&pio 1 4 GPIO_ACTIVE_HIGH>; *//* PB4 */
-		/*data1 = <&pio 1 5 GPIO_ACTIVE_HIGH>;*/ /* PB5 */
+		interrupt-parent = <&pio>;
+		interrupts = <1 4 IRQ_TYPE_LEVEL_LOW>, <1 5 IRQ_TYPE_LEVEL_LOW>;    
+		interrupt-names = "data0", "data1";
+	};
+	
+	aba {
+		compatible = "aba-reader,input";
 		
-		/*interrupt-parent = <&pio>;*/
-		/*interrupts = <1 4 IRQ_TYPE_LEVEL_LOW>, <1 5 IRQ_TYPE_LEVEL_LOW>;    */
-		/*interrupt-names = "data0", "data1";*/
-	/*};*/
+		data-gpios = <&pio 1 4 GPIO_ACTIVE_HIGH>; /* PB4 */
+	
+		interrupt-parent = <&pio>;
+		interrupts = <1 5 IRQ_TYPE_LEVEL_LOW>;    
+		interrupt-names = "clock";
+	};
 	
 	em125 {
-		compatible = "em125,input";
+		compatible = "em125-reader,input";
 		
 		pwms = <&pwm 1 8000 1>;
-		/*data-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>;*/
-
-		/*data = <&r_pio 0 4 GPIO_ACTIVE_HIGH>;*/
 
 		interrupt-parent = <&r_pio>;
 		interrupts = <0 4 IRQ_TYPE_EDGE_BOTH>;
 		interrupt-names = "data";
 	};
-	
 
 
 	

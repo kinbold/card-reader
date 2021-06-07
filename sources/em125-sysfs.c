@@ -4,7 +4,7 @@
  * @author  Vitor Gomes - vitor.gomes@csgd.com.br
  * @version V0.0.1
  * @date    2021-06-07
- * @brief   Em125 Reader Sysfs implements
+ * @brief   Em125 Reader Sysfs
  ******************************************************************************
  * @attention
  *
