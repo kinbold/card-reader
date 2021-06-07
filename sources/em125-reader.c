@@ -36,8 +36,6 @@
 #include "em125-reader.h"
 #include "systime.h"
 
-
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <asm/io.h>
@@ -55,14 +53,11 @@
 #include <linux/ktime.h>
 
 static int em125_minor = 0;
-static int irq_count = 0;
 
-
-
-static int major;
-static dev_t devid;
-static struct cdev io_cdev;
-static struct class *cls;
+//static int major;
+//static dev_t devid;
+//static struct cdev io_cdev;
+//static struct class *cls;
 static DECLARE_WAIT_QUEUE_HEAD(get_id_waitq);
 static volatile int ev_get_id = 0;
 
@@ -76,25 +71,25 @@ static uint64_t my_pl_card_id;
 static uint64_t real_card_id;
 
 #define IO_IDCARD_IN	0x16
-#define A33_PL11    356//363  //MODIFICADO PARA PL4
-#define A33_PL11_IRQ 	(__gpio_to_irq(A33_PL11))
+#define A33_PL4    356
+#define A33_PL4_IRQ 	(__gpio_to_irq(A33_PL4))
 #define BELOW1BIT	128		//this is 128us (128*1us)
 #define ABOVE1BIT	384		//this is 384us (384*1us)
 #define ABOVE2BITS	640		//this is 640us (640*1us)
 #define ERRORCOUNTS 20
 
-
+/*
 struct sunxi_pwm_regs {
 	unsigned long	pwm_ctrl_reg;	
 	unsigned long	pwm_ch0_period;	
 	unsigned long	pwm_ch1_period;	
 };
+*/
 
-
-static volatile struct sunxi_pwm_regs* pt_sunxi_pwm_regs;
-static volatile unsigned long *p_pio_phcfg0;
-static uint64_t card_id;
-static unsigned char  RFIDBuf128[16];
+/*static volatile struct sunxi_pwm_regs* pt_sunxi_pwm_regs;*/
+//static volatile unsigned long *p_pio_phcfg0;
+//static uint64_t card_id;
+static unsigned char RFIDBuf128[16];
 static unsigned char RFIDDecodeOK;
 static unsigned char RFIDCustomerID;
 static unsigned long RFIDLastCardID;
@@ -104,7 +99,7 @@ static unsigned char tmp_bit1;
 
 static unsigned char rfid_read_bit(void)
 {
-	return gpio_get_value(A33_PL11)? 1: 0;
+	return gpio_get_value(A33_PL4)? 1: 0;
 }
 
 /**
@@ -112,99 +107,19 @@ static unsigned char rfid_read_bit(void)
  * @param value :
  *        @arg 0 : From data 0 interrupt
  *        @arg 1 : From data 1 interrupt
- */
+ *//*
 static void em125_save_data(struct s_em125_driver * dev_data) {
 
-    int i;
-    unsigned long temp;
-   /* int value = !gpiod_get_value(dev_data->data_gpiod);
 
+}*/
 
-    if (dev_data->info.pulses == 0) {
-        if (value) {
-            dev_data->info.in_progress = true;
-            EM125READER_INSERTBIT2BUF(dev_data->info.buffer,
-                                    dev_data->info.pulses,
-                                    value);
-            dev_data->info.pulses++;
-        }
-    } else if (dev_data->info.pulses < EM125READER_MAX_BITS
-            && dev_data->info.pulses < (EM125READER_BUF_SIZE * 8)) {
-        EM125READER_INSERTBIT2BUF(dev_data->info.buffer,
-                                dev_data->info.pulses,
-                                value);
-        dev_data->info.pulses++;
-    }*/
-
-    // Acquire timestamp
-    //systime_start_us(dev_data->info.stamp);
 #if 0
-    // Wait for preamble
-    if (irq_count < 9){
-        dev_data->info.period[irq_count] = dev_data->info.stamp;
-        dev_data->info.buffer[irq_count] = 1;
-
-        pr_info(" Preamble time: %lu\n", dev_data->info.stamp);
-
-        // Calculate cycle duty from preamble
-        if (irq_count == 8){
-            dev_data->info.cycle = (dev_data->info.period[irq_count] - dev_data->info.period[irq_count-1]);
-            //dev_data->info.cycle = dev_data->info.period[8];
-            //dev_data->info.cycle
-
-            /*for (i = 7; i > 0; i--){
-                pr_info(" Cycle calc: %lu\n", dev_data->info.cycle);
-                dev_data->info.cycle += (dev_data->info.period[i] - dev_data->info.period[i-1]);
-                dev_data->info.cycle /= 2;
-            }*/
-
-            pr_info(" Period time: %lu\n", dev_data->info.cycle);
-        }
-    }
-    // Manufacturer Version Number
-    else /*if (irq_count <= 63)*/{
-        if ( (dev_data->info.stamp - dev_data->info.stamp_old) > (dev_data->info.cycle * 1,3 )){
-            dev_data->info.buffer[irq_count] = !dev_data->info.buffer[irq_count - 1]; 
-        }
-        else
-            dev_data->info.buffer[irq_count] = dev_data->info.buffer[irq_count - 1]; 
-
-        /* 
-        No fim, deve checar a paridade da linha e coluna, se estiver ok
-        deve enviar o numero para o buffer dev_data->info.buffer,
-
-        EM125READER_INSERTBIT2BUF(dev_data->info.buffer,
-                                dev_data->info.pulses,
-                                value);
-        dev_data->info.pulses++;*/
-
-        pr_info(" Stamp time diff : %lu\n", (dev_data->info.stamp - dev_data->info.stamp_old));
-        //pr_info(" Stamp time old: %lu\n", dev_data->info.stamp_old);
-        //pr_info(" Time calc :%lu\n", (dev_data->info.stamp_old + (dev_data->info.cycle + ( dev_data->info.cycle / 3 ) ) ) );
-    }
-    // Unique ID
-  /*      else if (irq_count <= 58){
-    }
-    // Column parity
-    else if (irq_count <= 63){
-        // Disable interrupt
-
-    }*/
-#endif
-    pr_info(" Stamp time diff : %lu\n", (dev_data->info.stamp - dev_data->info.stamp_old));
-    //pr_info(" Buffer [%d] : %d\n", irq_count, dev_data->info.buffer[irq_count]);
-    dev_data->info.stamp_old = dev_data->info.stamp;
-}
-
-
-
-
 static int io_open(struct inode *inode, struct file *file)
 {
 	pr_info("io_open ok.\n");
 	return 0;
 }
-
+#endif
 
 static unsigned char _crotl__(u8 value,u8 count)
 {
@@ -218,6 +133,7 @@ static unsigned char _crotl__(u8 value,u8 count)
 	//pr_info("%x,%x,%x,%x\n",buff1,buff,a,b);
 	return a | b;
 }
+
 static void RFIDBuf64Shift(void)
 {
 	unsigned char d,i;
@@ -229,35 +145,6 @@ static void RFIDBuf64Shift(void)
 		RFIDBuf128[i] = (RFIDBuf128[i] & 0xFE) | (RFIDBuf128[i+1] & 0x01);
 	RFIDBuf128[7] = (RFIDBuf128[7] & 0xFE) | d;
 }
-
-#if 0
-static unsigned char CheckParity(void)//uchar CheckParity(void)
-{
-	unsigned char  i,d;
-	unsigned long ld;
-	
-	ld = Data;
-	d = 0;
-	for(i=0;i<13;i++)
-	{
-		if ( ld % 2 ) d++;
-		ld >>= 1;
-	}
-	if ( !(d % 2) ) return 1;
-	
-	d = 0;
-	for(i=0;i<13;i++)
-	{
-		if ( ld % 2 ) d++;
-		ld >>= 1;
-	}
-	if ( d % 2 )
-		return 1;
-	else
-		return 0;
-}
-
-#endif
 
 static unsigned char RFIDParityCheck(void)
 {
@@ -319,8 +206,6 @@ static unsigned char RFIDParityCheck(void)
 	return ok;
 }
 	
-
-
 static unsigned long get_time_use(void)
 {
         struct timespec uptime, temp;  
@@ -334,7 +219,7 @@ static unsigned long get_time_use(void)
 	}
 	return (temp.tv_sec * 1000000000 + temp.tv_nsec)/1000;  /* unit us */
 }
-
+/*
 static long io_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 {
 	int ret;
@@ -360,11 +245,11 @@ ssize_t io_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
 {
 	int ret;
 	char tmp_buf[32];
-        //enable_irq(A33_PL11_IRQ);
-        wait_event_interruptible(get_id_waitq, ev_get_id);
-        ev_get_id = 0;
-	 sprintf(tmp_buf, "%llu", real_card_id);
-        pr_info("read card : %s    len = %d\n", tmp_buf,  strlen(tmp_buf));
+
+    wait_event_interruptible(get_id_waitq, ev_get_id);
+    ev_get_id = 0;
+
+    pr_info("read card : %s    len = %d\n", tmp_buf,  strlen(tmp_buf));
 	ret = copy_to_user( buf, tmp_buf, strlen(tmp_buf) );
 	if(ret < 0)
 		return ret;
@@ -373,18 +258,16 @@ ssize_t io_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
 
         memset(tmp_buf, 0, sizeof(tmp_buf));
 	return 0;
+}	*/
 
-}	
-
-
+/*
 static struct file_operations io_fops = {
 	.owner = THIS_MODULE,
 	.open  = io_open,
 	.unlocked_ioctl = io_ioctl,
 	.read = io_read,	   
 };
-
-
+*/
 
 int get_start_action(void)
 {
@@ -409,9 +292,9 @@ int get_start_action(void)
 }
 
 
-static void start_to_decode(void)
+static void start_to_decode(struct s_em125_driver * p)
 {
-    unsigned char  t1,t2;
+    unsigned char t1,t2;
 
     if(start_here){
         used_time = get_time_use();
@@ -460,7 +343,7 @@ static void start_to_decode(void)
             for(t1=0;t1<10;t1++) 
                 RFIDBuf128[t1] = ~RFIDBuf128[t1];	//to invert the data bits
             if ( !RFIDParityCheck() ) {
-                pr_info("RFIDParityCheck   error\n");
+                //pr_info("RFIDParityCheck   error\n");
                 RFIDDecodeOK = 0;
                 start_here = 0;
                 bits = 0;
@@ -487,16 +370,17 @@ static void start_to_decode(void)
                 my_pl_card_id = (my_pl_card_id <<4) | (RFIDBuf128[0]>>4);
             }
 		
-            if ( my_pl_card_id == RFIDLastCardID ){        
-                real_card_id = ((unsigned long) RFIDCustomerID * 0x100000000)  + my_pl_card_id;
-                pr_info("real_card_id : %llu\n", real_card_id);
+            if ( my_pl_card_id == RFIDLastCardID ){     
+                real_card_id = ((unsigned long) RFIDCustomerID * 0x100000000) + my_pl_card_id;
+
+                //pr_info("real_card_id : %llu\n", real_card_id);
+                sprintf(p->info.buffer, "%014llu", real_card_id);
+
                 ev_get_id = 1;
                 wake_up_interruptible(&get_id_waitq);  
                 start_here = 0;
                 bits = 0;
                 RFIDDecodeOK = 0;
-                //disable_irq(A33_PL11_IRQ);
-
             }else{
                 RFIDLastCardID = my_pl_card_id;
                 RFIDDecodeOK = 0;
@@ -504,10 +388,8 @@ static void start_to_decode(void)
                 bits = 0;
             }
         }
-
         getrawmonotonic(&start_uptime);  	
     }
-
 }
 
 /**
@@ -519,10 +401,9 @@ static void start_to_decode(void)
 static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     struct s_em125_driver * p = (struct s_em125_driver *) data;
     
-    //pr_info(" em125_reader_data_irq \n");
-
-#if 1
     if(start_here == 0){
+        p->info.in_progress = true;
+        p->info.pulses++;
         if(0 == get_start_action()){
             start_here = 1;
             bits = 0;
@@ -531,43 +412,10 @@ static irqreturn_t em125_reader_data_irq(int irq, void *data) {
         }
     }
 
-    start_to_decode();
-#endif
+    start_to_decode(p);
+    systime_start(p->info.stamp);
 
 	return IRQ_RETVAL(IRQ_HANDLED);
-
-    //systime_start_ns(p->info.stamp);
-/*
-    getrawmonotonic(&start_uptime); 
-
-    p->info.stamp = start_uptime.tv_nsec;
-    //pr_info("used_time = %ul\n", start_uptime.tv_nsec);
-
-    //pr_info(" Get Cycles : %lu\n", p->info.stamp);
-    //rtdscl(p->info.stamp);
-    //clock_gettime(CLOCK_MONOTONIC_RAW);
-
-    spin_lock(&p->spinlock);  
-
-    if (irq == p->data_irq) {
-        if (p->sysfs.status == _E_ES_NONE) {
-            //p->info.stamp = get_cycles();
-            em125_save_data(p);
-        }
-    }
-    
-    spin_unlock(&p->spinlock);
-
-    irq_count++;
-
-    if (irq_count >= DATA_ACQUIS_MIN_SAMPLES_EM4100){
-        irq_count = 0;
-        //disable_irq(p->data_irq);
-    }
-
-    return IRQ_HANDLED;
-*/
-
 }
 
 /**
@@ -583,7 +431,6 @@ void em125_reader_destroy(struct platform_device *pdev) {
             free_irq(em125->data_irq, em125);
         if (em125->dev)
             device_unregister(em125->dev);
-
 
         devm_kfree(&pdev->dev, em125);
     }
@@ -611,8 +458,6 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     em125->data_irq = -1;
     em125->info.pulses = 0;
     em125->info.in_progress = 0;
-    em125->info.cycle = 0;
-    em125->info.stamp_old = 0;
     memset(em125->info.buffer, 0, EM125READER_BUF_SIZE);
     spin_lock_init(&em125->spinlock);
 
@@ -629,13 +474,6 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     }
 
     pr_info(" node: %s\n", em125->name);
-
-    // Settings data pin first
-    /*em125->data_gpiod = devm_gpiod_get(&pdev->dev, "data", GPIOD_IN);
-    if (IS_ERR(em125->data_gpiod)) {
-        dev_err(&pdev->dev, " unable to get data gpiod\n");
-        return PTR_ERR(em125->data_gpiod);
-    }*/
 
     // Set data interrupt
     em125->data_irq = platform_get_irq_byname(pdev, "data");
@@ -695,7 +533,7 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
 
 	state.enabled = true;
 	state.period = 8000;
-    state.duty_cycle= 4000;
+    state.duty_cycle = 4000;
 
     err = pwm_apply_state(em125->antena, &state);
     if (err) {

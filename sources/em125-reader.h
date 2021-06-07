@@ -1,10 +1,10 @@
 /**
  ******************************************************************************
- * @file    aba-reader.h
- * @author  Dimitri Marques - dimitri@ddembedded.com.br
- * @version V0.0.0
- * @date    2016-05-11
- * @brief   Magnetic Reader Linux Kernel module using GPIO interrupts.
+ * @file    em125-reader.h
+ * @author  Vitor Gomes - vitor.gomes@csgd.com.br
+ * @version V0.0.1
+ * @date    2021-06-07
+ * @brief   Em125 Reader Linux Kernel module using GPIO interrupts.
  ******************************************************************************
  * @attention
  *
@@ -24,7 +24,7 @@
 #define EM125_READER_H_
 
 /**
- * @defgroup MagReader_Module
+ * @defgroup Em125_Module
  * @{
  */
 
@@ -46,14 +46,6 @@
 //! Configurar o tamanho máximo do buffer
 #define EM125READER_BUF_SIZE                         256u
 
-//! Get a bit from buffer read
-#define INTERPRET_GET_BITS_BUFF_DATA(buff, pos)     ((buff[(pos) / 8] & (1 << (7 - ((pos) % 8)))) != 0)
-
-//! Inserir um bit no buffer de dados do Magnético WIEGAND
-#define EM125READER_INSERTBIT2BUF(buff, pos, data)   ((data == 1) ? \
-                                                    (buff[pos/8] |= (1 << (7 - (pos % 8)))) : \
-                                                    (buff[pos/8] &= ~(1 << (7 - (pos % 8)))))
-
 //! Definição do ID único para controle da rotina IOCTL
 #define EM125READER_IOCTL_APP_TYPE                   0x52
 
@@ -74,14 +66,9 @@ typedef struct s_em125_info {
     bool in_progress;
     unsigned int pulses;
     unsigned long stamp;
-    unsigned long stamp_old;
     struct timespec start_uptime; 
-    struct timespec start_uptime_old; 
-    unsigned long period[9];
-    unsigned long cycle;
-    unsigned int buffer[EM125READER_BUF_SIZE];
+    char buffer[EM125READER_BUF_SIZE];
 } s_em125_info_t;
-
 
 /**
  * @brief Estrutura de controle do driver magnético
@@ -89,6 +76,7 @@ typedef struct s_em125_info {
 struct s_em125_sysfs {
   int status;
   int start_bit;
+  __u64 id_code;
 };
 
 /**

@@ -1,10 +1,10 @@
 /**
  ******************************************************************************
- * @file    aba-reader-sysfs.c
- * @author  Dimitri Marques - dimitri@ddembedded.com.br
- * @version V0.0.0
- * @date    2016-04-26
- * @brief   Wiegand Reader Sysfs implements
+ * @file    em125-sysfs.c
+ * @author  Vitor Gomes - vitor.gomes@csgd.com.br
+ * @version V0.0.1
+ * @date    2021-06-07
+ * @brief   Em125 Reader Sysfs implements
  ******************************************************************************
  * @attention
  *
@@ -75,6 +75,7 @@ int em125_setup_initializes(struct s_em125_driver * em125) {
     // configuração da estrutura de dados do WIEGAND
     em125->sysfs.status = _E_ES_NONE;
     em125->sysfs.start_bit = 0;
+    em125->sysfs.id_code = 0;
 
     // criar o grupo de atributos para controle do driver
     err = sysfs_create_group(&em125->dev->kobj, &em125_attr_group);
@@ -130,25 +131,8 @@ static ssize_t id_code_show(struct device *dev, struct device_attribute *attr, c
     unsigned long flags;
     if (!spin_trylock_irqsave(&em125->spinlock, flags))
         return 0;
-    switch (em125->sysfs.status) {
-        case _E_ES_NONE:
-            if (em125->info.in_progress && systime_timeout(em125->info.stamp, EM125_TIMEOUT)) {
-                em125->sysfs.status = _E_ES_CARD_AVAILABLE;
-                len = em125->info.pulses / 8;
-                if (len % 8)
-                    len++;
-                memcpy(buf, em125->info.buffer, len);
-            }
-            break;
-        case _E_ES_CARD_AVAILABLE:
-            len = em125->info.pulses / 8;
-            if (len % 8)
-                len++;
-            memcpy(buf, em125->info.buffer, len);
-            break;
-        default:
-            break;
-    }
+        
+    len = sprintf(buf, "%-14.14s", /*em125->sysfs.id_code*/em125->info.buffer);
     spin_unlock_irqrestore(&em125->spinlock, flags);
     return len;
 }
@@ -163,15 +147,17 @@ static ssize_t id_bits_show(struct device *dev, struct device_attribute *attr, c
         case _E_ES_NONE:
             if (em125->info.in_progress && systime_timeout(em125->info.stamp, EM125_TIMEOUT)) {
                 em125->sysfs.status = _E_ES_CARD_AVAILABLE;
-                for (;len < em125->info.pulses; len++) {
+                /*for (;len < em125->info.pulses; len++) {
                     buf[len] = (INTERPRET_GET_BITS_BUFF_DATA(em125->info.buffer, len)) ? '1' : '0';
-                }
+                }*/
+                memcpy(buf, em125->info.buffer, 14);
             }
             break;
         case _E_ES_CARD_AVAILABLE:
-            for (;len < em125->info.pulses; len++) {
+           /* for (;len < em125->info.pulses; len++) {
                 buf[len] = (INTERPRET_GET_BITS_BUFF_DATA(em125->info.buffer, len)) ? '1' : '0';
-            }
+            }*/
+            memcpy(buf, em125->info.buffer, 14);
             break;
         default:
             break;
@@ -207,6 +193,7 @@ static ssize_t clean_store(struct device *dev, struct device_attribute *attr, co
     em125->info.pulses = 0;
     em125->info.in_progress = 0;
     em125->sysfs.status = _E_ES_NONE;
+    em125->sysfs.id_code = 0;
     memset(em125->info.buffer, 0, EM125READER_BUF_SIZE);
     spin_unlock_irqrestore(&em125->spinlock, flags);
     status = size;
