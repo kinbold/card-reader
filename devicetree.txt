@@ -4,7 +4,7 @@
 		compatible = "wiegand-reader,input";
 		
 		interrupt-parent = <&pio>;
-		interrupts = <1 4 IRQ_TYPE_LEVEL_LOW>, <1 5 IRQ_TYPE_LEVEL_LOW>;    
+		interrupts = <1 4 IRQ_TYPE_NONE>, <1 5 IRQ_TYPE_NONE>;    
 		interrupt-names = "data0", "data1";
 	};
 	
@@ -14,7 +14,7 @@
 		data-gpios = <&pio 1 4 GPIO_ACTIVE_HIGH>; /* PB4 */
 	
 		interrupt-parent = <&pio>;
-		interrupts = <1 5 IRQ_TYPE_LEVEL_LOW>;    
+		interrupts = <1 5 IRQ_TYPE_NONE>;    
 		interrupt-names = "clock";
 	};
 	
@@ -24,9 +24,9 @@
 		pwms = <&pwm 1 8000 1>;
 
 		interrupt-parent = <&r_pio>;
-		interrupts = <0 4 IRQ_TYPE_EDGE_BOTH>;
+		interrupts = <0 4 IRQ_TYPE_NONE>;
 		interrupt-names = "data";
-	};
+	};	
 
 
 	

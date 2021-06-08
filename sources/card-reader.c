@@ -94,7 +94,7 @@ static int card_reader_probe(struct platform_device *pdev) {
             pr_info("Abatrack configuration file not found\n");
             //err = -1;
         }
-        else {
+        else {       
             err = aba_reader_create(pdev, &card_class);
         }
     }

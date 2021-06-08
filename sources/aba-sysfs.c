@@ -128,8 +128,10 @@ static ssize_t id_code_show(struct device *dev, struct device_attribute *attr, c
     s_aba_driver_t * aba = (s_aba_driver_t *) dev_get_drvdata(dev);
     ssize_t len = 0;
     unsigned long flags;
+    
     if (!spin_trylock_irqsave(&aba->spinlock, flags))
         return 0;
+
     switch (aba->sysfs.status) {
         case _E_AS_NONE:
             if (aba->info.in_progress && systime_timeout(aba->info.stamp, ABA_TIMEOUT)) {
@@ -138,6 +140,7 @@ static ssize_t id_code_show(struct device *dev, struct device_attribute *attr, c
                 if (len % 8)
                     len++;
                 memcpy(buf, aba->info.buffer, len);
+                //pr_info("id_code_show1 _E_AS_NONE - buf = %s\n", aba->info.buffer);
             }
             break;
         case _E_AS_CARD_AVAILABLE:
@@ -145,10 +148,12 @@ static ssize_t id_code_show(struct device *dev, struct device_attribute *attr, c
             if (len % 8)
                 len++;
             memcpy(buf, aba->info.buffer, len);
+            //pr_info("id_code_show2 _E_AS_CARD_AVAILABLE - buf = %s\n", aba->info.buffer);
             break;
         default:
             break;
     }
+
     spin_unlock_irqrestore(&aba->spinlock, flags);
     return len;
 }

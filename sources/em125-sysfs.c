@@ -27,7 +27,6 @@
 #include <linux/sysfs.h>
 #include <linux/device.h>
 #include <linux/spinlock.h>
-
 #include "em125-reader.h"
 #include "systime.h"
 
@@ -147,17 +146,15 @@ static ssize_t id_bits_show(struct device *dev, struct device_attribute *attr, c
         case _E_ES_NONE:
             if (em125->info.in_progress && systime_timeout(em125->info.stamp, EM125_TIMEOUT)) {
                 em125->sysfs.status = _E_ES_CARD_AVAILABLE;
-                /*for (;len < em125->info.pulses; len++) {
-                    buf[len] = (INTERPRET_GET_BITS_BUFF_DATA(em125->info.buffer, len)) ? '1' : '0';
-                }*/
-                memcpy(buf, em125->info.buffer, 14);
+                for (;len < em125->info.pulses; len++) {
+                    buf[len] = em125->info.buffer[len];
+                }
             }
             break;
         case _E_ES_CARD_AVAILABLE:
-           /* for (;len < em125->info.pulses; len++) {
-                buf[len] = (INTERPRET_GET_BITS_BUFF_DATA(em125->info.buffer, len)) ? '1' : '0';
-            }*/
-            memcpy(buf, em125->info.buffer, 14);
+            for (;len < em125->info.pulses; len++) {
+                buf[len] = em125->info.buffer[len];
+            }
             break;
         default:
             break;

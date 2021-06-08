@@ -57,6 +57,7 @@ static void aba_save_data(struct s_aba_driver * dev_data) {
                                 value);
         dev_data->info.pulses++;
     }
+    
 }
 
 /**

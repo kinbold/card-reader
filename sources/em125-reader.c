@@ -20,44 +20,36 @@
  ******************************************************************************
  */
 
+#include <linux/cdev.h>
+#include <linux/device.h>
 #include <linux/err.h>
+#include <linux/fs.h>
+#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
+#include <linux/hrtimer.h>
+#include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
 #include <linux/kdev_t.h>
-#include <linux/spinlock.h>
-#include <linux/gpio/consumer.h>
-#include <linux/pwm.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/ktime.h>
 #include <linux/module.h>
+#include <linux/pwm.h>
+#include <linux/sched.h>
+#include <linux/spinlock.h>
+#include <linux/time.h>
+#include <linux/uaccess.h>
 #include <linux/unistd.h>
 #include <asm/dma.h>
-
+#include <asm/io.h>
 #include "em125-reader.h"
 #include "systime.h"
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <asm/io.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/init.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/gpio.h>
-#include <linux/interrupt.h>
-#include <linux/time.h>
-#include <linux/kthread.h>
-#include <linux/sched.h>
-#include <linux/hrtimer.h>
-#include <linux/ktime.h>
 
 static int em125_minor = 0;
-
-//static int major;
-//static dev_t devid;
-//static struct cdev io_cdev;
-//static struct class *cls;
 static DECLARE_WAIT_QUEUE_HEAD(get_id_waitq);
 static volatile int ev_get_id = 0;
 
@@ -73,22 +65,11 @@ static uint64_t real_card_id;
 #define IO_IDCARD_IN	0x16
 #define A33_PL4    356
 #define A33_PL4_IRQ 	(__gpio_to_irq(A33_PL4))
-#define BELOW1BIT	128		//this is 128us (128*1us)
-#define ABOVE1BIT	384		//this is 384us (384*1us)
-#define ABOVE2BITS	640		//this is 640us (640*1us)
+#define BELOW1BIT	128		//128us (128*1us)
+#define ABOVE1BIT	384		//384us (384*1us)
+#define ABOVE2BITS	640		//640us (640*1us)
 #define ERRORCOUNTS 20
 
-/*
-struct sunxi_pwm_regs {
-	unsigned long	pwm_ctrl_reg;	
-	unsigned long	pwm_ch0_period;	
-	unsigned long	pwm_ch1_period;	
-};
-*/
-
-/*static volatile struct sunxi_pwm_regs* pt_sunxi_pwm_regs;*/
-//static volatile unsigned long *p_pio_phcfg0;
-//static uint64_t card_id;
 static unsigned char RFIDBuf128[16];
 static unsigned char RFIDDecodeOK;
 static unsigned char RFIDCustomerID;
@@ -101,25 +82,6 @@ static unsigned char rfid_read_bit(void)
 {
 	return gpio_get_value(A33_PL4)? 1: 0;
 }
-
-/**
- * @brief Routine to save data from data interrupt
- * @param value :
- *        @arg 0 : From data 0 interrupt
- *        @arg 1 : From data 1 interrupt
- *//*
-static void em125_save_data(struct s_em125_driver * dev_data) {
-
-
-}*/
-
-#if 0
-static int io_open(struct inode *inode, struct file *file)
-{
-	pr_info("io_open ok.\n");
-	return 0;
-}
-#endif
 
 static unsigned char _crotl__(u8 value,u8 count)
 {
@@ -219,55 +181,6 @@ static unsigned long get_time_use(void)
 	}
 	return (temp.tv_sec * 1000000000 + temp.tv_nsec)/1000;  /* unit us */
 }
-/*
-static long io_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
-{
-	int ret;
-  	switch(cmd)
-  	{
-		case IO_IDCARD_IN:
-			//rfid_get_card_id(&card_id);
-			pr_info("card id : %llu\n", card_id);
-			ret = copy_to_user( (void*)arg, &card_id, sizeof(card_id) );
-			if(ret < 0)
-				return -1;
-			else
-				card_id = 0;
-			break;
-		default:
-			break;
-	}
-	return 0;
-}
-
-
-ssize_t io_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
-{
-	int ret;
-	char tmp_buf[32];
-
-    wait_event_interruptible(get_id_waitq, ev_get_id);
-    ev_get_id = 0;
-
-    pr_info("read card : %s    len = %d\n", tmp_buf,  strlen(tmp_buf));
-	ret = copy_to_user( buf, tmp_buf, strlen(tmp_buf) );
-	if(ret < 0)
-		return ret;
-	else
-		card_id = 0;
-
-        memset(tmp_buf, 0, sizeof(tmp_buf));
-	return 0;
-}	*/
-
-/*
-static struct file_operations io_fops = {
-	.owner = THIS_MODULE,
-	.open  = io_open,
-	.unlocked_ioctl = io_ioctl,
-	.read = io_read,	   
-};
-*/
 
 int get_start_action(void)
 {
