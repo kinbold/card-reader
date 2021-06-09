@@ -34,20 +34,71 @@
 #define DRV_VERSION             "3.0.0"
 
 static int card_drivers = 0;
+struct platform_device *pdevwieg, *pdevaba;
 
-static struct class_attribute card_class_attrs[] = {
-__ATTR_NULL
+// Mode Control
+unsigned int mode = 0;
+
+static ssize_t mode_show(struct class *class,
+				struct class_attribute *attr,
+				char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "%u\n", mode);
+}
+
+static ssize_t mode_store(struct class *class,
+				struct class_attribute *attr,
+				const char *buf, size_t size)
+{
+	unsigned int bt;
+	ssize_t result;
+	result = sscanf(buf, "%u", &bt);
+	if (result != 1)
+		return -EINVAL;
+	mode = bt;
+
+
+
+    if (mode == 1)
+    {
+        //destroy aba
+        //aba_reader_destroy(pdevaba);
+
+        //liga wiegand
+        wiegand_reader_create(pdevwieg, class);
+    }
+
+    if (mode == 2)
+    {
+        //destroy wiegand
+        //wiegand_reader_destroy(pdevwieg);
+
+        //liga aba
+        aba_reader_create(pdevaba, class);
+    }
+
+
+
+	return size;
+}
+static CLASS_ATTR_RW(mode);
+
+static struct attribute *card_class_attrs[] = {
+    &class_attr_mode.attr,
+    NULL,
 };
+ATTRIBUTE_GROUPS(card_class);
 
 static struct class card_class = {
     .name = DRV_NAME,
     .owner = THIS_MODULE,
-    /*.class_attrs = card_class_attrs*/
+    .class_groups = card_class_groups,
 };
 
 static const struct of_device_id card_reader_dt_ids[] = {
-    { .compatible = "wiegand-reader,input", },
-    { .compatible = "aba-reader,input", },
+    /*{ .compatible = "wiegand-reader,input", },*/
+    /*{ .compatible = "aba-reader,input", },*/
+    { .compatible = "card-reader,input", },
     { .compatible = "em125-reader,input", },
     { /* sentinel */ }
 };
@@ -74,55 +125,13 @@ static int card_reader_probe(struct platform_device *pdev) {
     }
 
     // create data of the device driver
-    if (strcmp(match->compatible, "wiegand-reader,input") == 0) {
-        // Check wiegand configuration file
-        f = filp_open("/opt/wiegand", O_RDONLY, 0);
-
-        if (IS_ERR(f) || f == NULL) {
-            pr_info("Wiegand configuration file not found\n");
-            //err = -1;
-        }
-        else {
-            err = wiegand_reader_create(pdev, &card_class);
-        }
-    }
-    else if (strcmp(match->compatible, "aba-reader,input") == 0) {
-        // Check abatrack configuration file
-        f = filp_open("/opt/abatrack", O_RDONLY, 0);
-
-        if (IS_ERR(f) || f == NULL) {
-            pr_info("Abatrack configuration file not found\n");
-            //err = -1;
-        }
-        else {       
-            err = aba_reader_create(pdev, &card_class);
-        }
+    if (strcmp(match->compatible, "card-reader,input") == 0) { 
+        err = wiegand_reader_create(pdev, &card_class);
+        pdevwieg = pdev;
     }
     else if (strcmp(match->compatible, "em125-reader,input") == 0) {
         err = em125_reader_create(pdev, &card_class);
-
     }
-   /* else if (strcmp(match->compatible, "card-reader,input") == 0) {
-        // Check wiegand configuration file
-        f = filp_open("/opt/wiegand", O_RDONLY, 0);
-
-        if (IS_ERR(f) || f == NULL) {
-            pr_info("Wiegand configuration file not found\n");
-        }
-        else {
-            err = wiegand_reader_create(pdev, &card_class);
-        }
-
-        // Check abatrack configuration file
-        f = filp_open("/opt/abatrack", O_RDONLY, 0);
-
-        if (IS_ERR(f) || f == NULL) {
-            pr_info("Abatrack configuration file not found\n");
-        }
-        else {
-            err = aba_reader_create(pdev, &card_class);
-        }
-    }*/
     else {
         err = -1;
     }

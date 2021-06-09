@@ -160,7 +160,7 @@ int aba_reader_create(struct platform_device *pdev, struct class * drv_class) {
     }
 
     // Set clock interrupt
-    aba->clock_irq = platform_get_irq_byname(pdev, "clock");
+    aba->clock_irq = platform_get_irq_byname(pdev, "data1");
 
     if (aba->clock_irq < 0) {
         pr_err(" clock: invalid IRQ %d\n", aba->clock_irq);
