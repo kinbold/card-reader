@@ -90,8 +90,13 @@ static irqreturn_t aba_reader_data_irq(int irq, void *data) {
 void aba_reader_destroy(struct platform_device *pdev) {
     s_aba_driver_t * aba = platform_get_drvdata(pdev);
 
+
     if (aba != NULL) {
         aba_setup_remove(aba);
+
+        //devm_gpio_free(&pdev->dev, aba->data_gpiod);
+        gpiod_put(aba->data_gpiod);
+
         if (aba->clock_irq > 0)
             free_irq(aba->clock_irq, aba);
         if (aba->dev)

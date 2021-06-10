@@ -60,7 +60,7 @@
  */
 
 /**
- * @brief For the WIEGAND reader driver
+ * @brief For the EM125 reader driver
  */
 typedef struct s_em125_info {
     bool in_progress;
@@ -71,7 +71,7 @@ typedef struct s_em125_info {
 } s_em125_info_t;
 
 /**
- * @brief Estrutura de controle do driver magnético
+ * @brief Estrutura de controle do driver 
  */
 struct s_em125_sysfs {
   int status;
@@ -80,19 +80,18 @@ struct s_em125_sysfs {
 };
 
 /**
- * \brief Struct Wiegand Driver control
+ * \brief Struct EM125 Driver control
  */
 typedef struct s_em125_driver {
     const char * name;
     struct device * dev;
     int minor;
     int data_irq;
-    int data_irq_dma;
     spinlock_t spinlock;
     struct s_em125_info info;
     struct s_em125_sysfs sysfs;
-    struct gpio_desc *data_gpiod;
     struct pwm_device *antena;
+    struct gpio_desc *data_gpiod;
 } s_em125_driver_t;
 
 enum _e_em125_status {

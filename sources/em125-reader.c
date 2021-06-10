@@ -62,9 +62,6 @@ static int bits = 0;
 static uint64_t my_pl_card_id;
 static uint64_t real_card_id;
 
-#define IO_IDCARD_IN	0x16
-#define A33_PL4    356
-#define A33_PL4_IRQ 	(__gpio_to_irq(A33_PL4))
 #define BELOW1BIT	128		//128us (128*1us)
 #define ABOVE1BIT	384		//384us (384*1us)
 #define ABOVE2BITS	640		//640us (640*1us)
@@ -78,9 +75,9 @@ static unsigned char const RFIDMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x0
 static unsigned char tmp_bit1;
 
 
-static unsigned char rfid_read_bit(void)
+static unsigned int rfid_read_bit(struct s_em125_driver * dev_data)
 {
-	return gpio_get_value(A33_PL4)? 1: 0;
+    return gpiod_get_value(dev_data->data_gpiod)? 1: 0;
 }
 
 static unsigned char _crotl__(u8 value,u8 count)
@@ -182,13 +179,14 @@ static unsigned long get_time_use(void)
 	return (temp.tv_sec * 1000000000 + temp.tv_nsec)/1000;  /* unit us */
 }
 
-int get_start_action(void)
+int get_start_action(struct s_em125_driver * p )
 {
     int ret = -1;
+
     if(cnt == 0){
-         v1 = rfid_read_bit();
+         v1 = rfid_read_bit(p);
     }else{
-        v2 = rfid_read_bit();
+        v2 = rfid_read_bit(p);
     }
 
     cnt++;
@@ -222,7 +220,7 @@ static void start_to_decode(struct s_em125_driver * p)
                 bits = 0;
             }
 
-            if(rfid_read_bit()){
+            if(rfid_read_bit(p)){
                 if ( used_time>=ABOVE1BIT ){
                     RFIDBuf128[bits>>3] &= ~RFIDMask[bits&0x07];	//save double bits of 0
                     if(bits < 127){
@@ -314,10 +312,12 @@ static void start_to_decode(struct s_em125_driver * p)
 static irqreturn_t em125_reader_data_irq(int irq, void *data) {
     struct s_em125_driver * p = (struct s_em125_driver *) data;
     
+    /*spin_lock(&p->spinlock);*/
+
     if(start_here == 0){
         p->info.in_progress = true;
         p->info.pulses++;
-        if(0 == get_start_action()){
+        if(0 == get_start_action(p)){
             start_here = 1;
             bits = 0;
             getrawmonotonic(&start_uptime);  	
@@ -327,6 +327,8 @@ static irqreturn_t em125_reader_data_irq(int irq, void *data) {
 
     start_to_decode(p);
     systime_start(p->info.stamp);
+
+    /*spin_unlock(&p->spinlock);*/
 
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
@@ -388,8 +390,30 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
 
     pr_info(" node: %s\n", em125->name);
 
+    // Settings data pin first
+    em125->data_gpiod = devm_gpiod_get(&pdev->dev, "data", GPIOD_IN);
+    if (IS_ERR(em125->data_gpiod)) {
+        dev_err(&pdev->dev, " unable to get data gpiod\n");
+        return PTR_ERR(em125->data_gpiod);
+    }
+
+    // create device driver to system class
+    em125->dev = device_create(drv_class,
+                             NULL,
+                             MKDEV(0, 0),
+                             em125,
+                             "%s%d",
+                             "em125-in",
+                             em125->minor);
+
+    if (IS_ERR(em125->dev)) {
+        dev_warn(&pdev->dev,
+             "device_create failed for em125 sysfs\n");
+        return -EIO;
+    }
+
     // Set data interrupt
-    em125->data_irq = platform_get_irq_byname(pdev, "data");
+    em125->data_irq = platform_get_irq_byname(pdev, "data_irq");
 
     if (em125->data_irq < 0) {
         pr_err(" data: invalid IRQ %d\n", em125->data_irq);
@@ -405,21 +429,6 @@ int em125_reader_create(struct platform_device *pdev, struct class * drv_class) 
     if (err < 0) {
         em125->data_irq = -1;
         pr_err(" data: cannot register IRQ %d\n", em125->data_irq);
-        return -EIO;
-    }
-
-    // create device driver to system class
-    em125->dev = device_create(drv_class,
-                             NULL,
-                             MKDEV(0, 0),
-                             em125,
-                             "%s%d",
-                             "em125-in",
-                             em125->minor);
-
-    if (IS_ERR(em125->dev)) {
-        dev_warn(&pdev->dev,
-             "device_create failed for em125 sysfs\n");
         return -EIO;
     }
 

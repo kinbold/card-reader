@@ -59,6 +59,8 @@
 //! Timeout to detect a card number
 #define ABA_TIMEOUT                                100 // 100 milliseconds
 
+
+
 /**
  * @}
  */
