@@ -2,7 +2,6 @@ dt binding example:
 
 
 	
-	
 	card_reader {
 		compatible = "card-reader,input";
 	
@@ -17,8 +16,10 @@ dt binding example:
 		compatible = "em125-reader,input";
 		
 		pwms = <&pwm 1 8000 1>;
+		
+		data-gpios = <&r_pio 0 4 GPIO_ACTIVE_HIGH>;
 
 		interrupt-parent = <&r_pio>;
 		interrupts = <0 4 IRQ_TYPE_NONE>;
-		interrupt-names = "data";
+		interrupt-names = "data_irq";
 	};
